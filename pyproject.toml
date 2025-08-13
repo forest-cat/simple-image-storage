@@ -5,7 +5,7 @@ description = "A simple api that can store and serve images written in python wi
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.116.1",
+    "fastapi[standard]>=0.116.1",
     "python-multipart>=0.0.20",
     "uvicorn>=0.35.0",
 ]
