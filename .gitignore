@@ -159,10 +159,4 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-config-sensitive-data.json
-%Bibliotheken%Programms-Workspace%Python%Python-bot%Haupt-Schule-Bot%zitate%zitate
-history.sqlite
-meine_datenbank.db
-read-database.py
-write-database.py
-zitatabase.db
+dev_config.ini
