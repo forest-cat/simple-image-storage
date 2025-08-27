@@ -107,3 +107,4 @@ async def download_file(id: int, session: SessionDependency) -> Response:
             media_type=img.content_type,
             headers={"content-disposition": f"attachment; filename={img.filename}"},
             status_code=200)
+
