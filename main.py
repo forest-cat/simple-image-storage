@@ -3,12 +3,14 @@ import json
 import logging
 import os
 from contextlib import asynccontextmanager
+from io import BytesIO
 from typing import Annotated
 
 from fastapi import FastAPI, UploadFile, Depends, Request, HTTPException
 from sqlalchemy import LargeBinary
 from sqlmodel import create_engine, Field, SQLModel, Session, Column
 from starlette.responses import Response
+from PIL import Image, UnidentifiedImageError
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,8 @@ def read_config() -> dict:
     config.read(config_name)
     config_values = {
         "db_filename": config.get("Database", "filename"),
-        "cr_token": config.get("Credentials", "token")
+        "cr_token": config.get("Credentials", "token"),
+        "st_imgsize": config.getint("Settings", "imgsize")
     }
     return config_values
 
@@ -48,6 +51,9 @@ async def verify_token(request: Request):
             detail="Invalid or missing token",
         )
 
+
+def remove_file_extension(filename: str) -> str:
+    return os.path.splitext(filename)[0]
 
 SessionDependency = Annotated[Session, Depends(get_session)]
 
@@ -90,10 +96,33 @@ async def say_hello(name: str):
 
 @app.post("/upload/{id}", dependencies=[Depends(verify_token)])
 async def upload_file(id: int, file: UploadFile, session: SessionDependency):
-    img = SImage(id=id, filename=file.filename, content_type=file.content_type, data=await file.read())
-    session.merge(img)
-    session.commit()
-    return Response(status_code=200, media_type="application/json", content=json.dumps({"id": img.id}))
+    try:
+        content = await file.read()
+
+        if len(content) > app.state.config["st_imgsize"] * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="File too large")
+        image = Image.open(BytesIO(content))
+        image.verify()
+
+        image = Image.open(BytesIO(content))  # Reopen after verify
+        image = image.convert("RGB")
+        output = BytesIO()
+        image.save(output, format="WEBP")
+        output.seek(0) # reset BytesIO cursor after writing image
+
+
+        img = SImage(id=id, filename=f"{remove_file_extension(file.filename)}.webp", content_type="image/webp", data=output.read())
+        session.merge(img)
+        session.commit()
+        return Response(status_code=200, media_type="application/json", content=json.dumps({"id": img.id}))
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=415, detail="Uploaded file is not a valid image")
+    except HTTPException as e:
+        if e.status_code == 413:
+            raise HTTPException(status_code=413, detail="File too large")
+    except Exception as e:
+        logger.error(f"Unexpected: {e}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error")
 
 
 @app.get("/image/{id}")
