@@ -14,4 +14,5 @@ EXPOSE 8000
 
 # Run the app via gunicorn using uvicorn worker
 ENTRYPOINT ["uv", "run"]
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "main:app"]
+#CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "main:app"]
+CMD ["app/main.py"]

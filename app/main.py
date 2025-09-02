@@ -6,54 +6,17 @@ from contextlib import asynccontextmanager
 from io import BytesIO
 from typing import Annotated
 
+import uvicorn
 from fastapi import FastAPI, UploadFile, Depends, Request, HTTPException
-from sqlalchemy import LargeBinary
-from sqlmodel import create_engine, Field, SQLModel, Session, Column
+from sqlmodel import create_engine, Session
 from starlette.responses import Response
 from PIL import Image, UnidentifiedImageError
 
+from config import load_config
+from sql import get_session, create_db_and_tables, SImage
+from utils import verify_token, remove_file_extension
+
 logger = logging.getLogger(__name__)
-
-
-class SImage(SQLModel, table=True):
-    id: int = Field(primary_key=True, nullable=False, index=True)
-    filename: str = Field(nullable=False, index=True)
-    content_type: str = Field(nullable=False, index=True)
-    data: bytes = Field(sa_column=Column(LargeBinary, nullable=False))
-
-
-def create_db_and_tables():
-    SQLModel.metadata.create_all(app.state.engine)
-
-
-def get_session():
-    with Session(app.state.engine) as session:
-        yield session
-
-
-def read_config() -> dict:
-    config = configparser.ConfigParser()
-    config_name = "dev_config.ini" if os.path.exists("dev_config.ini") else "config.ini"
-    config.read(config_name)
-    config_values = {
-        "db_filename": config.get("Database", "filename"),
-        "cr_token": config.get("Credentials", "token"),
-        "st_imgsize": config.getint("Settings", "imgsize")
-    }
-    return config_values
-
-
-async def verify_token(request: Request):
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or auth_header != f"Bearer {app.state.config['cr_token']}":
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or missing token",
-        )
-
-
-def remove_file_extension(filename: str) -> str:
-    return os.path.splitext(filename)[0]
 
 SessionDependency = Annotated[Session, Depends(get_session)]
 
@@ -61,12 +24,12 @@ SessionDependency = Annotated[Session, Depends(get_session)]
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting up: {app.title}")
-    app.state.config = read_config()
+    app.state.settings = load_config()
     app.state.engine = create_engine(
-        f"sqlite:///{app.state.config['db_filename']}",
+        f"sqlite:///{app.state.settings.db_filename}",
         connect_args={"check_same_thread": False}
     )
-    create_db_and_tables()
+    create_db_and_tables(app.state.engine)
     yield
     logger.info(f"Shutting down: {app.title}")
     app.state.engine.dispose()
@@ -83,7 +46,6 @@ app = FastAPI(
     openapi_url=None, # Disable public API docs
 )
 
-
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
@@ -99,7 +61,7 @@ async def upload_file(id: int, file: UploadFile, session: SessionDependency):
     try:
         content = await file.read()
 
-        if len(content) > app.state.config["st_imgsize"] * 1024 * 1024:
+        if len(content) > app.state.settings.img_size * 1024 * 1024:
             raise HTTPException(status_code=413, detail="File too large")
         image = Image.open(BytesIO(content))
         image.verify()
@@ -129,7 +91,7 @@ async def upload_file(id: int, file: UploadFile, session: SessionDependency):
 async def download_file(id: int, session: SessionDependency) -> Response:
     img = session.get(SImage, id)
     if img is None:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404, detail="Image does not exist")
     else:
         return Response(
             content=img.data,
@@ -137,3 +99,15 @@ async def download_file(id: int, session: SessionDependency) -> Response:
             headers={"content-disposition": f"attachment; filename={img.filename}"},
             status_code=200)
 
+
+
+if __name__ == "__main__":
+    settings = load_config()
+
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=settings.port,
+        log_config="log_conf.yaml",
+        log_level=settings.log_level.lower(),
+    )

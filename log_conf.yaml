@@ -39,7 +39,7 @@ loggers:
 #      - accessFile
     propagate: no
 root:
-  level: DEBUG
+  level: WARN
   handlers:
     - default
     - defaultFile

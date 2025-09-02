@@ -1,0 +1,9 @@
+services:
+  api:
+    build: .
+    container_name: simple-image-storage
+    ports:
+      - "8000:8000"
+    environment:
+      SIS_ACCESS_TOKEN: "Hallooooo"
+      SIS_LOG_LEVEL: "ERROR"
