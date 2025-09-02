@@ -9,10 +9,11 @@ COPY . .
 # Install dependencies from pyproject.toml/uv.lock
 RUN uv sync
 
+# Create data volume
+VOLUME ["/data"]
+ENV SIS_DATABASE_FILENAME="/data/sis_database.sqlite"
+
 # Expose default port
 EXPOSE 8000
 
-# Run the app via gunicorn using uvicorn worker
-ENTRYPOINT ["uv", "run"]
-#CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "main:app"]
-CMD ["app/main.py"]
+ENTRYPOINT ["uv", "run", "app/main.py"]

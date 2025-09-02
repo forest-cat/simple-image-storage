@@ -4,6 +4,8 @@ services:
     container_name: simple-image-storage
     ports:
       - "8000:8000"
+    volumes:
+      - "./data:/data"
     environment:
       SIS_ACCESS_TOKEN: "Hallooooo"
       SIS_LOG_LEVEL: "ERROR"
