@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     token: str = Field(..., validation_alias="ACCESS_TOKEN")
     img_size: int = Field(5, validation_alias="IMG_SIZE")
     model_config = {
-        "populate_by_name": True
+        "populate_by_name": True,
+        "extra": "allow"
     }
 
 
