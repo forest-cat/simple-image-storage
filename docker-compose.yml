@@ -7,5 +7,5 @@ services:
     volumes:
       - "./data:/data"
     environment:
-      SIS_ACCESS_TOKEN: "Hallooooo"
+      SIS_ACCESS_TOKEN: ""
       SIS_LOG_LEVEL: "ERROR"

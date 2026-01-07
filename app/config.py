@@ -5,12 +5,12 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 
 class Settings(BaseSettings):
-    db_filename: str = Field("sis_database.sqlite", validation_alias="DATABASE_FILENAME")
-    port: int = Field(8000, validation_alias="PORT")
-    log_level: str = Field("INFO", validation_alias="LOG_LEVEL")
-    config_file: str = Field(..., validation_alias="CONFIG_FILENAME")
-    token: str = Field(..., validation_alias="ACCESS_TOKEN")
-    img_size: int = Field(5, validation_alias="IMG_SIZE")
+    db_filename:    str = Field("sis_database.sqlite", validation_alias="DATABASE_FILENAME")
+    port:           int = Field(8000,   validation_alias="PORT")
+    log_level:      str = Field("INFO", validation_alias="LOG_LEVEL")
+    config_file:    str = Field(...,    validation_alias="CONFIG_FILENAME")
+    token:          str = Field(...,    validation_alias="ACCESS_TOKEN")
+    img_size:       int = Field(5,      validation_alias="IMG_SIZE")
     model_config = {
         "populate_by_name": True,
         "extra": "allow"

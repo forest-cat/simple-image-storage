@@ -1,0 +1,5 @@
+token: ""
+db_filename: "sis_database.sqlite"
+port: 8000
+log_level: "INFO"
+img_size: 5
