@@ -1,6 +1,6 @@
 [project]
 name = "simple-image-storage"
-version = "0.1.0"
+version = "1.0.0"
 description = "A simple api that can store and serve images written in python with fastapi"
 readme = "README.md"
 requires-python = ">=3.12"
