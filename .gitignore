@@ -161,3 +161,5 @@ cython_debug/
 
 dev_config.ini
 database.db
+config.yaml
+sis_database.sqlite
